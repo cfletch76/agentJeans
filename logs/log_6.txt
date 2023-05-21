@@ -1,0 +1,415 @@
+agentJeans/
+    run.py
+    .DS_Store
+    config.py
+    requirements.txt
+    show_files.py
+    migrations/
+        script.py.mako
+        env.py
+        alembic.ini
+        README
+        versions/
+            e9161bb24aa8_creating_initial_tables_for_the_database.py
+    app/
+        .DS_Store
+        models.py
+        __init__.py
+        views.py
+        static/
+            .DS_Store
+            css/
+                main.css
+            js/
+                main.js
+        templates/
+            home.html
+    docs/
+        project_plan.txt
+    instance/
+    db/
+        agentJeans.db
+    .vscode/
+        settings.json
+File:  /Users/charlesfletcher/agentJeans/run.py
+from app import create_app, db
+from flask_migrate import Migrate
+from app.models import User
+
+app = create_app()
+
+migrate = Migrate(app, db)
+
+@app.shell_context_processor
+def make_shell_context():
+    return dict(db=db, User=User)
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=5001)
+
+
+
+
+
+###############
+##############
+#Reember to set up the VM!
+#
+#source venv/bin/activate  # activate the virtual environment
+#deactivate    --- deactivate the VM
+#
+##############
+##############
+File:  /Users/charlesfletcher/agentJeans/config.py
+SQLALCHEMY_DATABASE_URI = 'sqlite:////Users/charlesfletcher/agentJeans/db/agentJeans.db'
+
+
+
+
+
+
+File:  /Users/charlesfletcher/agentJeans/requirements.txt
+blinker==1.6.2
+click==8.1.3
+Flask==2.3.2
+Flask-SQLAlchemy==3.0.3
+Flask-Migrate==3.3.1
+flask_script==2.0.6
+importlib-metadata==6.6.0
+itsdangerous==2.1.2
+Jinja2==3.1.2
+MarkupSafe==2.1.2
+SQLAlchemy==2.0.14
+typing_extensions==4.5.0
+Werkzeug==2.3.4
+zipp==3.15.0
+
+
+File:  /Users/charlesfletcher/agentJeans/show_files.py
+import os
+import sys
+
+def list_files(startpath, exclude_folders):
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        print('{}{}/'.format(indent, os.path.basename(root)))
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            print('{}{}'.format(subindent, f))
+        dirs[:] = [d for d in dirs if d not in exclude_folders]
+
+def print_file_contents(startpath, exclude_files, exclude_folders):
+    text_extensions = ['.txt', '.py', '.css', '.js', '.html']
+    for root, dirs, files in os.walk(startpath):
+        for file in files:
+            if file not in exclude_files and any(file.endswith(ext) for ext in text_extensions):
+                print("File: ", os.path.join(root, file))
+                with open(os.path.join(root, file), 'r') as f:
+                    try:
+                        print(f.read())
+                    except UnicodeDecodeError:
+                        print("Could not decode file contents.")
+        dirs[:] = [d for d in dirs if d not in exclude_folders]
+
+def create_log_dir():
+    log_dir = os.path.join(os.getcwd(), "logs")
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    return log_dir
+
+def log_to_file(log_dir):
+    file_name = f"log_{len(os.listdir(log_dir)) + 1}.txt"
+    file_path = os.path.join(log_dir, file_name)
+    return file_path
+
+startpath = '/Users/charlesfletcher/agentJeans'
+exclude_files = ['log.txt']  # Add more filenames here as required
+exclude_folders = ['logs', 'venv']  # Add more folder names here as required
+
+log_dir = create_log_dir()
+log_file = log_to_file(log_dir)
+
+with open(log_file, 'w') as log:
+    # Redirect stdout to the log file
+    original_stdout = sys.stdout
+    sys.stdout = log
+
+    # List files and directories
+    list_files(startpath, exclude_folders)
+
+    # Print file contents
+    print_file_contents(startpath, exclude_files, exclude_folders)
+
+    # Restore original stdout
+    sys.stdout = original_stdout
+
+File:  /Users/charlesfletcher/agentJeans/migrations/env.py
+import logging
+from logging.config import fileConfig
+
+from flask import current_app
+
+from alembic import context
+
+# this is the Alembic Config object, which provides
+# access to the values within the .ini file in use.
+config = context.config
+
+# Interpret the config file for Python logging.
+# This line sets up loggers basically.
+fileConfig(config.config_file_name)
+logger = logging.getLogger('alembic.env')
+
+
+def get_engine():
+    try:
+        # this works with Flask-SQLAlchemy<3 and Alchemical
+        return current_app.extensions['migrate'].db.get_engine()
+    except TypeError:
+        # this works with Flask-SQLAlchemy>=3
+        return current_app.extensions['migrate'].db.engine
+
+
+def get_engine_url():
+    try:
+        return get_engine().url.render_as_string(hide_password=False).replace(
+            '%', '%%')
+    except AttributeError:
+        return str(get_engine().url).replace('%', '%%')
+
+
+# add your model's MetaData object here
+# for 'autogenerate' support
+# from myapp import mymodel
+# target_metadata = mymodel.Base.metadata
+config.set_main_option('sqlalchemy.url', get_engine_url())
+target_db = current_app.extensions['migrate'].db
+
+# other values from the config, defined by the needs of env.py,
+# can be acquired:
+# my_important_option = config.get_main_option("my_important_option")
+# ... etc.
+
+
+def get_metadata():
+    if hasattr(target_db, 'metadatas'):
+        return target_db.metadatas[None]
+    return target_db.metadata
+
+
+def run_migrations_offline():
+    """Run migrations in 'offline' mode.
+
+    This configures the context with just a URL
+    and not an Engine, though an Engine is acceptable
+    here as well.  By skipping the Engine creation
+    we don't even need a DBAPI to be available.
+
+    Calls to context.execute() here emit the given string to the
+    script output.
+
+    """
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url, target_metadata=get_metadata(), literal_binds=True
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def run_migrations_online():
+    """Run migrations in 'online' mode.
+
+    In this scenario we need to create an Engine
+    and associate a connection with the context.
+
+    """
+
+    # this callback is used to prevent an auto-migration from being generated
+    # when there are no changes to the schema
+    # reference: http://alembic.zzzcomputing.com/en/latest/cookbook.html
+    def process_revision_directives(context, revision, directives):
+        if getattr(config.cmd_opts, 'autogenerate', False):
+            script = directives[0]
+            if script.upgrade_ops.is_empty():
+                directives[:] = []
+                logger.info('No changes in schema detected.')
+
+    connectable = get_engine()
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=get_metadata(),
+            process_revision_directives=process_revision_directives,
+            **current_app.extensions['migrate'].configure_args
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()
+
+File:  /Users/charlesfletcher/agentJeans/migrations/versions/e9161bb24aa8_creating_initial_tables_for_the_database.py
+"""creating initial tables for the database
+
+Revision ID: e9161bb24aa8
+Revises: 
+Create Date: 2023-05-18 18:24:04.131351
+
+"""
+from alembic import op
+import sqlalchemy as sa
+
+
+# revision identifiers, used by Alembic.
+revision = 'e9161bb24aa8'
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.create_table('user',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.String(length=64), nullable=False),
+    sa.Column('email', sa.String(length=120), nullable=False),
+    sa.Column('email_confirmed', sa.Boolean(), nullable=False),
+    sa.Column('password_hash', sa.String(length=128), nullable=True),
+    sa.Column('first_name', sa.String(length=64), nullable=True),
+    sa.Column('last_name', sa.String(length=64), nullable=True),
+    sa.Column('avatar', sa.String(length=256), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('(CURRENT_TIMESTAMP)'), nullable=True),
+    sa.Column('updated_at', sa.DateTime(timezone=True), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email'),
+    sa.UniqueConstraint('user_id')
+    )
+    # ### end Alembic commands ###
+
+
+def downgrade():
+    # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_table('user')
+    # ### end Alembic commands ###
+
+File:  /Users/charlesfletcher/agentJeans/app/models.py
+from app import db
+from sqlalchemy.sql import func
+from werkzeug.security import generate_password_hash, check_password_hash
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(64), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    email_confirmed = db.Column(db.Boolean, nullable=False, default=False)
+    password_hash = db.Column(db.String(128))
+    first_name = db.Column(db.String(64), nullable=True)
+    last_name = db.Column(db.String(64), nullable=True)
+    avatar = db.Column(db.String(256), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+
+    @property
+    def password(self):
+        raise AttributeError('password: write-only field')
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+File:  /Users/charlesfletcher/agentJeans/app/__init__.py
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+
+# Initialize the db and migrate objects
+db = SQLAlchemy()
+migrate = Migrate()
+
+def create_app():
+    app = Flask(__name__)
+    app.config.from_pyfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.py'))
+
+    # Bind the app object to the db and migrate objects
+    db.init_app(app)
+    migrate.init_app(app, db)
+
+    return app
+
+
+
+
+File:  /Users/charlesfletcher/agentJeans/app/views.py
+from flask import render_template
+from app import create_app
+
+app = create_app()
+
+@app.route('/')
+def home():
+    return render_template('home.html')
+
+File:  /Users/charlesfletcher/agentJeans/app/static/css/main.css
+
+File:  /Users/charlesfletcher/agentJeans/app/static/js/main.js
+
+File:  /Users/charlesfletcher/agentJeans/app/templates/home.html
+Hello world (home.html)
+File:  /Users/charlesfletcher/agentJeans/docs/project_plan.txt
+#project_plan.txt
+
+Project Setup (1-2 days)
+
+Setup a new Flask project with the necessary file structure
+Setup a new React project and integrate it with the Flask backend
+Database Design & Setup (2-3 days)
+
+Define the schema for user profiles, agent configurations, and conversation histories
+Setup SQLite database and create tables based on the schema
+OpenAI API Integration (1-2 days)
+
+Setup OpenAI API in the backend
+Create basic API endpoints for agent interactions
+Frontend Development (1-2 weeks)
+
+Design and implement the user interface for agent interaction
+Design and implement the agent configuration panel
+Backend Development (1-2 weeks)
+
+Implement API endpoints for user profile management and agent configuration
+Implement the logic for agent behavior, including remembering past interactions, norms, and model switching based on cost
+Web Browsing Feature (1 week)
+
+Develop the feature for the agent to browse the internet for information. This could involve web scraping, API integrations, or other techniques as needed
+Testing and Debugging (1-2 weeks)
+
+Test all features thoroughly, identify bugs, and fix them
+Improve the robustness of the application
+Feedback Mechanism & Norms Learning (1 week)
+
+Implement the feedback mechanism for users to rate agent's responses
+Implement the mechanism for the agent to learn norms from user interactions
+Data Encryption & Security (2-3 days)
+
+Implement encryption for sensitive data in the database
+Deployment (1-2 days)
+
+Prepare the application for deployment on a MacBook
+Documentation & Wrap-up (1-2 days)
+
+Document the code, architecture, and usage instructions

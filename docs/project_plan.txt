@@ -1,0 +1,42 @@
+#project_plan.txt
+
+Project Setup (1-2 days)
+
+Setup a new Flask project with the necessary file structure
+Setup a new React project and integrate it with the Flask backend
+Database Design & Setup (2-3 days)
+
+Define the schema for user profiles, agent configurations, and conversation histories
+Setup SQLite database and create tables based on the schema
+OpenAI API Integration (1-2 days)
+
+Setup OpenAI API in the backend
+Create basic API endpoints for agent interactions
+Frontend Development (1-2 weeks)
+
+Design and implement the user interface for agent interaction
+Design and implement the agent configuration panel
+Backend Development (1-2 weeks)
+
+Implement API endpoints for user profile management and agent configuration
+Implement the logic for agent behavior, including remembering past interactions, norms, and model switching based on cost
+Web Browsing Feature (1 week)
+
+Develop the feature for the agent to browse the internet for information. This could involve web scraping, API integrations, or other techniques as needed
+Testing and Debugging (1-2 weeks)
+
+Test all features thoroughly, identify bugs, and fix them
+Improve the robustness of the application
+Feedback Mechanism & Norms Learning (1 week)
+
+Implement the feedback mechanism for users to rate agent's responses
+Implement the mechanism for the agent to learn norms from user interactions
+Data Encryption & Security (2-3 days)
+
+Implement encryption for sensitive data in the database
+Deployment (1-2 days)
+
+Prepare the application for deployment on a MacBook
+Documentation & Wrap-up (1-2 days)
+
+Document the code, architecture, and usage instructions

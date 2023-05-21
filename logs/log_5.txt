@@ -1,0 +1,232 @@
+agentJeans/
+    run.py
+    .DS_Store
+    config.py
+    requirements.txt
+    show_files.py
+    app/
+        .DS_Store
+        models.py
+        __init__.py
+        views.py
+        static/
+            .DS_Store
+            css/
+                main.css
+            js/
+                main.js
+        templates/
+            home.html
+    docs/
+        project_plan.txt
+    instance/
+    db/
+    .vscode/
+        settings.json
+File:  /Users/charlesfletcher/agentJeans/run.py
+from app import create_app, db
+
+app = create_app()
+
+if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
+    app.run(debug=True, port=5001)  # specify a port here
+
+
+
+
+###############
+##############
+#Reember to set up the VM!
+#
+#source venv/bin/activate  # activate the virtual environment
+#deactivate    --- deactivate the VM
+#
+##############
+##############
+File:  /Users/charlesfletcher/agentJeans/config.py
+SQLALCHEMY_DATABASE_URI = 'sqlite:///db/agentJeans.db'
+
+
+
+
+File:  /Users/charlesfletcher/agentJeans/requirements.txt
+blinker==1.6.2
+click==8.1.3
+Flask==2.3.2
+Flask-SQLAlchemy==3.0.3
+Flask-Migrate==3.3.1
+importlib-metadata==6.6.0
+itsdangerous==2.1.2
+Jinja2==3.1.2
+MarkupSafe==2.1.2
+SQLAlchemy==2.0.14
+typing_extensions==4.5.0
+Werkzeug==2.3.4
+zipp==3.15.0
+
+
+File:  /Users/charlesfletcher/agentJeans/show_files.py
+import os
+import sys
+
+def list_files(startpath, exclude_folders):
+    for root, dirs, files in os.walk(startpath):
+        level = root.replace(startpath, '').count(os.sep)
+        indent = ' ' * 4 * (level)
+        print('{}{}/'.format(indent, os.path.basename(root)))
+        subindent = ' ' * 4 * (level + 1)
+        for f in files:
+            print('{}{}'.format(subindent, f))
+        dirs[:] = [d for d in dirs if d not in exclude_folders]
+
+def print_file_contents(startpath, exclude_files, exclude_folders):
+    text_extensions = ['.txt', '.py', '.css', '.js', '.html']
+    for root, dirs, files in os.walk(startpath):
+        for file in files:
+            if file not in exclude_files and any(file.endswith(ext) for ext in text_extensions):
+                print("File: ", os.path.join(root, file))
+                with open(os.path.join(root, file), 'r') as f:
+                    try:
+                        print(f.read())
+                    except UnicodeDecodeError:
+                        print("Could not decode file contents.")
+        dirs[:] = [d for d in dirs if d not in exclude_folders]
+
+def create_log_dir():
+    log_dir = os.path.join(os.getcwd(), "logs")
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    return log_dir
+
+def log_to_file(log_dir):
+    file_name = f"log_{len(os.listdir(log_dir)) + 1}.txt"
+    file_path = os.path.join(log_dir, file_name)
+    return file_path
+
+startpath = '/Users/charlesfletcher/agentJeans'
+exclude_files = ['log.txt']  # Add more filenames here as required
+exclude_folders = ['logs', 'venv']  # Add more folder names here as required
+
+log_dir = create_log_dir()
+log_file = log_to_file(log_dir)
+
+with open(log_file, 'w') as log:
+    # Redirect stdout to the log file
+    original_stdout = sys.stdout
+    sys.stdout = log
+
+    # List files and directories
+    list_files(startpath, exclude_folders)
+
+    # Print file contents
+    print_file_contents(startpath, exclude_files, exclude_folders)
+
+    # Restore original stdout
+    sys.stdout = original_stdout
+
+File:  /Users/charlesfletcher/agentJeans/app/models.py
+from app import db
+from sqlalchemy.sql import func
+from werkzeug.security import generate_password_hash, check_password_hash
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.String(64), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    email_confirmed = db.Column(db.Boolean, nullable=False, default=False)
+    password_hash = db.Column(db.String(128))
+    first_name = db.Column(db.String(64), nullable=True)
+    last_name = db.Column(db.String(64), nullable=True)
+    avatar = db.Column(db.String(256), nullable=True)
+    created_at = db.Column(db.DateTime(timezone=True), server_default=func.now())
+    updated_at = db.Column(db.DateTime(timezone=True), onupdate=func.now())
+
+    @property
+    def password(self):
+        raise AttributeError('password: write-only field')
+
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+
+File:  /Users/charlesfletcher/agentJeans/app/__init__.py
+import os
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+
+# Initialize the db object
+db = SQLAlchemy()
+migrate = Migrate()
+
+def create_app():
+    app = Flask(__name__)
+    app.config.from_pyfile(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../config.py'))
+
+    # Bind the app object to the db object
+    db.init_app(app)
+    migrate.init_app(app, db)
+
+    # Add further configurations and blueprints here if needed
+
+    return app
+
+
+
+File:  /Users/charlesfletcher/agentJeans/app/views.py
+
+File:  /Users/charlesfletcher/agentJeans/app/static/css/main.css
+
+File:  /Users/charlesfletcher/agentJeans/app/static/js/main.js
+
+File:  /Users/charlesfletcher/agentJeans/app/templates/home.html
+
+File:  /Users/charlesfletcher/agentJeans/docs/project_plan.txt
+#project_plan.txt
+
+Project Setup (1-2 days)
+
+Setup a new Flask project with the necessary file structure
+Setup a new React project and integrate it with the Flask backend
+Database Design & Setup (2-3 days)
+
+Define the schema for user profiles, agent configurations, and conversation histories
+Setup SQLite database and create tables based on the schema
+OpenAI API Integration (1-2 days)
+
+Setup OpenAI API in the backend
+Create basic API endpoints for agent interactions
+Frontend Development (1-2 weeks)
+
+Design and implement the user interface for agent interaction
+Design and implement the agent configuration panel
+Backend Development (1-2 weeks)
+
+Implement API endpoints for user profile management and agent configuration
+Implement the logic for agent behavior, including remembering past interactions, norms, and model switching based on cost
+Web Browsing Feature (1 week)
+
+Develop the feature for the agent to browse the internet for information. This could involve web scraping, API integrations, or other techniques as needed
+Testing and Debugging (1-2 weeks)
+
+Test all features thoroughly, identify bugs, and fix them
+Improve the robustness of the application
+Feedback Mechanism & Norms Learning (1 week)
+
+Implement the feedback mechanism for users to rate agent's responses
+Implement the mechanism for the agent to learn norms from user interactions
+Data Encryption & Security (2-3 days)
+
+Implement encryption for sensitive data in the database
+Deployment (1-2 days)
+
+Prepare the application for deployment on a MacBook
+Documentation & Wrap-up (1-2 days)
+
+Document the code, architecture, and usage instructions
